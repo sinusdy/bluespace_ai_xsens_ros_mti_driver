@@ -64,6 +64,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include "std_srvs/srv/set_bool.hpp"
 #include "xdacallback.h"
 #include <xstypes/xsportinfo.h>
 
@@ -94,6 +95,9 @@ private:
 	void registerCallback(PacketCallback *cb);
 	bool handleError(std::string error);
 	void declareCommonParameters();
+	void resetConnectionCallback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+	rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr reset_connection_service_;
+
 
 	XsControl *m_control;
 	XsDevice *m_device;

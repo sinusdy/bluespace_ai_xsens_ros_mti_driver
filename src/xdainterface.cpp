@@ -92,6 +92,9 @@ XdaInterface::XdaInterface(const std::string &node_name, const rclcpp::NodeOptio
 	RCLCPP_INFO(get_logger(), "Creating XsControl object...");
 	m_control = XsControl::construct();
 	assert(m_control != 0);
+	reset_connection_service_ = this->create_service<std_srvs::srv::SetBool>(
+        "reset_imu_connection", std::bind(&XdaInterface::resetConnectionCallback, this, 
+		std::placeholders::_1, std::placeholders::_2));
 }
 
 XdaInterface::~XdaInterface()
@@ -360,4 +363,38 @@ void XdaInterface::declareCommonParameters()
 
 	declare_parameter("enable_logging", false);
 	declare_parameter("log_file", "log.mtb");
+}
+
+void XdaInterface::resetConnectionCallback(
+	const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> response)
+{
+	RCLCPP_DEBUG(this->get_logger(), "Reset connection called!");
+	if (m_control != nullptr)
+	{
+		RCLCPP_DEBUG(this->get_logger(), "Closing control");
+		close();
+		m_control->destruct();
+		m_control = XsControl::construct();
+		assert(m_control != 0);
+	}
+	if (!connectDevice())
+	{
+		RCLCPP_DEBUG(this->get_logger(), "Connect device failed");
+		m_device = nullptr;
+		response->success = false;
+	}
+	else
+	{
+		if (!prepare())
+		{
+			RCLCPP_DEBUG(this->get_logger(), "Prepare device failed");
+			response->success = false;
+		}
+		else
+		{
+			RCLCPP_INFO(this->get_logger(), "Connect and prepare device succeed");
+			response->success = true;
+		}
+	}
 }
